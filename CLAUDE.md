@@ -19,7 +19,15 @@
      as the first entry (date, status: accepted, reason).
 3. Once the stack is confirmed, suggest a set of stack-appropriate
    permissions to pre-allow in `.claude/settings.json` (e.g. npm/pip/cargo
-   commands) and get the user's approval before adding them.
+   commands) and get the user's approval before adding them. Permission
+   rules are scoped by *tool name*, not by shell — `Bash(git status *)`
+   never matches a call made through the `PowerShell` tool, and vice
+   versa. Check which shell tool this session actually uses (`Bash` on
+   Mac/Linux, `PowerShell` on Windows unless Git Bash/WSL is in play) and
+   add matching entries for that tool. If unsure, add both — a rule for
+   a tool that's never invoked is harmless, but a missing one silently
+   fails to gate anything, which is worse for the "ask" list than the
+   "allow" list.
 4. Ask whether this repo needs its own `.env` (secrets, SSH keys, API
    tokens, etc.). If yes, create `.env` and `.env.example`, and confirm
    `.env` stays in `.gitignore` (it's there by default — don't remove it).
