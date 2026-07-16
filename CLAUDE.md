@@ -31,12 +31,25 @@
 4. Ask whether this repo needs its own `.env` (secrets, SSH keys, API
    tokens, etc.). If yes, create `.env` and `.env.example`, and confirm
    `.env` stays in `.gitignore` (it's there by default — don't remove it).
-5. Ask about any repo-specific conventions not already covered (commit
+5. Before the first push, check `git config user.email` (local, falls
+   back to global) against the repo's visibility (`gh repo view --json
+   visibility`). If it's unset or resolves to an auto-detected address
+   (git falls back to `<username>@<hostname>` when no identity is
+   configured — a real, non-obvious failure mode, not hypothetical),
+   set it explicitly with `git config user.email`: the GitHub noreply
+   address (`<id>+<login>@users.noreply.github.com`, from
+   `gh api user --jq '{id,login}'`) for **public** repos, since GitHub
+   rejects pushes exposing an unverified/non-public real email (GH007);
+   a real address is fine for **private** repos. Setting the config only
+   affects *future* commits — if commits already exist with the wrong
+   email, they need reapplying (cherry-pick each onto a reset branch
+   tip, not interactive rebase) before they'll push.
+6. Ask about any repo-specific conventions not already covered (commit
    style, branch strategy, deploy process). Skip anything the user says to
    leave as default.
-6. Summarize what was recorded so the user can correct anything inferred
+7. Summarize what was recorded so the user can correct anything inferred
    wrong.
-7. Delete this BOOT section from `CLAUDE.md` and note in `Working.md` that
+8. Delete this BOOT section from `CLAUDE.md` and note in `Working.md` that
    setup is complete.
 
 ---
