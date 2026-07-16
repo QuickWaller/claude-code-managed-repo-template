@@ -56,7 +56,8 @@ Read this file first in any session.
   memory files are split, and only gets broken into per-section index
   files (each still linked from root) if the root index itself grows too
   long to navigate. Memory files and decisions may cross-reference other
-  sections' indexes.
+  sections' indexes. Within a section, individual files split by scope,
+  not by size — see the memory file scope rule under Rules below.
 
 - **`decisions/DECISIONS.md`** — decision register. Every decision worth
   remembering gets an entry: **date**, **status** (proposed / accepted /
@@ -77,5 +78,20 @@ Read this file first in any session.
 - If you notice a significant discrepancy between the docs and the actual
   repo state, flag it and suggest a memory audit rather than silently
   patching over it or ignoring it.
+- **Memory file scope rule**: a memory file's job is its one-line
+  description in `MEMORY.md`. When new content stops matching that
+  description, it belongs elsewhere — split on scope drift, not on line
+  count. A large single-topic file is fine; a small multi-topic one
+  isn't. Prefer moving drifted content into whichever *existing* file's
+  description already covers it before creating a new one. A file passing
+  roughly 250 lines is a reasonable prompt to check for drift, not an
+  automatic split trigger. Compress resolved session-log narrative ("we
+  tried X, it failed with Y, here's why") into a `DECISIONS.md` entry
+  once the outcome is settled — memory files should hold what's still
+  true/actionable now, plus a pointer to the decision for the "why," not
+  a duplicate retelling. After any split, grep the repo for
+  `[[wikilinks]]` and prose pointers into the moved content and update
+  them — a split that leaves stale cross-references just relocates the
+  staleness instead of fixing it.
 - Destructive or hard-to-reverse actions still require explicit
   confirmation regardless of what's pre-allowed in `.claude/settings.json`.
