@@ -10,7 +10,17 @@
       "Bash(gh pr view *)",
       "Bash(gh issue view *)",
       "Bash(gh repo list *)",
-      "Bash(mkdir *)"
+      "Bash(mkdir *)",
+      "PowerShell(git status *)",
+      "PowerShell(git diff *)",
+      "PowerShell(git log *)",
+      "PowerShell(git show *)",
+      "PowerShell(git branch *)",
+      "PowerShell(git tag *)",
+      "PowerShell(gh pr view *)",
+      "PowerShell(gh issue view *)",
+      "PowerShell(gh repo list *)",
+      "PowerShell(mkdir *)"
     ]
   }
 }
