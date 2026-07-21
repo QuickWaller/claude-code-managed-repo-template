@@ -65,7 +65,10 @@ Read this file first in any session.
   If something is tabled, shelved, or paused, remove it from here rather
   than marking it paused. Purpose: any session — fresh, resumed, or
   accidentally concurrent — can read this file and know the current state
-  at a glance.
+  at a glance. When handing off mid-investigation (model switch, low
+  context, end of session), record what's already been **ruled out** and
+  the single **next concrete step** — not just the goal — so the next
+  session continues the diagnosis instead of restarting it.
 
 - **`memory/`** — indexed repo memory: project-specific documentation,
   architecture notes, and context that isn't derivable from the code
@@ -116,3 +119,43 @@ Read this file first in any session.
   staleness instead of fixing it.
 - Destructive or hard-to-reverse actions still require explicit
   confirmation regardless of what's pre-allowed in `.claude/settings.json`.
+- Treat `git push` and any deploy as outward-facing actions needing
+  explicit go-ahead **each time** — in repos wired to auto-deploy, a push
+  *is* a deploy. Committing locally is fine; publishing is the gated step.
+  When the user says to hold off pushing/deploying, that hold stands for
+  the **rest of the session**, not just the one commit it was said about.
+
+### If this project has a UI / front-end
+
+- Verify visual changes against **actual rendered pixels** — screenshot
+  the result, ideally at the viewport (and in the browser) the user
+  actually uses, not just headless defaults or `getComputedStyle`
+  numbers. A layout can measure as correct and still render wrong.
+- If the user reports a visual problem that your measurements say is
+  fine, **believe them** — you're measuring the wrong element or the
+  wrong environment. Get an annotated screenshot or reproduce what they
+  see; measure the exact thing they point at. Don't re-assert the numbers.
+- **Set up a design-token layer early** as the single source of truth
+  for styling — colours, type scale, spacing scale, radii, z-index, and
+  key layout constants — using the stack's idiomatic mechanism (CSS
+  custom properties, a theme object, Tailwind config, etc.). Name tokens
+  **semantically by role** (e.g. `ink` / `paper` / `accent`, not raw
+  hexes), so theming and dark mode re-point tokens in one place instead
+  of touching every component. Components reference tokens, never magic
+  numbers; genuine one-offs (a lone banner height, a hairline border)
+  stay inline rather than pretending to be scale steps. A refactor that
+  only tokenizes existing values should be **zero behaviour change** —
+  preserve every computed value, and verify that (tests/snapshots green,
+  rendered output identical).
+
+### If this project has tests
+
+- Keep both unit tests (logic) and integration/e2e tests (rendering +
+  behaviour) **green before calling a change done** — run the suite,
+  don't assume. Add or update tests alongside the change that needs them.
+- For visual-regression baselines, only regenerate them **after
+  confirming the new render is actually correct**. Never blind-update
+  snapshots to turn red green — that silently blesses regressions.
+- Encode design/behaviour invariants ("fits without scrolling", "no
+  overflow", "stays centred") as guardrail tests where you can, so they
+  fail loudly instead of being caught by eye later.
