@@ -61,14 +61,20 @@ Read this file first in any session.
 
 ## Structure
 
-- **`Working.md`** (root, always singular) — what's currently in progress.
-  If something is tabled, shelved, or paused, remove it from here rather
-  than marking it paused. Purpose: any session — fresh, resumed, or
-  accidentally concurrent — can read this file and know the current state
-  at a glance. When handing off mid-investigation (model switch, low
-  context, end of session), record what's already been **ruled out** and
-  the single **next concrete step** — not just the goal — so the next
-  session continues the diagnosis instead of restarting it.
+- **`Working.md`** (root) — what's currently in progress. If something is
+  tabled, shelved, or paused, remove it from here rather than marking it
+  paused. Purpose: any session — fresh, resumed, or accidentally
+  concurrent — can read this file and know the current state at a glance.
+  When handing off mid-investigation (model switch, low context, end of
+  session), record what's already been **ruled out** and the single
+  **next concrete step** — not just the goal — so the next session
+  continues the diagnosis instead of restarting it. When it grows past a
+  session or two's worth of "currently in progress" material, move whole
+  finished `##` sections wholesale into a new
+  `Working_archive-<week-start-date>.md` (weekly, as needed — not a fixed
+  cadence) rather than summarizing or deleting them; leave a one-line
+  pointer in `Working.md`. These archives double as a project roadmap/
+  history, so preserve full detail, don't compress it.
 
 - **`memory/`** — indexed repo memory: project-specific documentation,
   architecture notes, and context that isn't derivable from the code
@@ -87,6 +93,18 @@ Read this file first in any session.
   remembering gets an entry: **date**, **status** (proposed / accepted /
   rejected / superseded), **reason**. Same root-vs-section split logic as
   memory applies.
+
+- **`handoffs/`** (optional, opt-in) — independent-execution dispatch
+  system for repos with parallelizable, independent work streams. Not
+  part of default setup; adopt it when a project outgrows single-threaded
+  work (multiple independent streams that could run concurrently without
+  colliding). See `handoffs/TEMPLATE.md` and `.claude/agents/executor.md`
+  for the mechanics: an orchestrator session writes a self-contained
+  handoff doc per stream, `handoffs/INDEX.md` tracks dispatch status/deps/
+  touched-surface conflicts, and `executor` subagents (worktree-isolated
+  for parallel work) run each stream independently and report back in a
+  structured shape. Delete `handoffs/` entirely if a project never needs
+  it — its presence isn't a signal the repo requires it.
 
 ## Rules
 
