@@ -1,3 +1,7 @@
 .env
 .env.local
 node_modules/
+
+# Machine-local stream-coordination registry (see CLAUDE.md's "Parallel
+# work" section) — only created if a project adopts that pattern.
+ACTIVE.md

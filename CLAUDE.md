@@ -68,13 +68,18 @@ Read this file first in any session.
   When handing off mid-investigation (model switch, low context, end of
   session), record what's already been **ruled out** and the single
   **next concrete step** — not just the goal — so the next session
-  continues the diagnosis instead of restarting it. When it grows past a
-  session or two's worth of "currently in progress" material, move whole
-  finished `##` sections wholesale into a new
-  `Working_archive-<week-start-date>.md` (weekly, as needed — not a fixed
-  cadence) rather than summarizing or deleting them; leave a one-line
-  pointer in `Working.md`. These archives double as a project roadmap/
-  history, so preserve full detail, don't compress it.
+  continues the diagnosis instead of restarting it.
+  **Archive-cadence rule:** don't wait for a fixed weekly clock. Archive a
+  `##` section into a new `Working_archive-<week-start-date>.md` (reuse
+  the current week's archive file if one already exists, otherwise start a
+  new one) as soon as **either** (a) that section's own text reports
+  itself finished — done/merged/deployed/verified, nothing gated on a
+  human or another stream (small deferred fast-follow items don't count;
+  carry those forward as a short bullet instead) — or (b) the file exceeds
+  roughly 400 lines of currently-in-progress material, whichever comes
+  first. Move whole sections wholesale, never summarize or delete; leave a
+  one-line pointer in `Working.md`. These archives double as a project
+  roadmap/history, so preserve full detail, don't compress it.
 
 - **`memory/`** — indexed repo memory: project-specific documentation,
   architecture notes, and context that isn't derivable from the code
@@ -92,7 +97,10 @@ Read this file first in any session.
 - **`decisions/DECISIONS.md`** — decision register. Every decision worth
   remembering gets an entry: **date**, **status** (proposed / accepted /
   rejected / superseded), **reason**. Same root-vs-section split logic as
-  memory applies.
+  memory applies. **Entry-length rule:** a `Decision`/`Reason` cell running
+  past roughly 300 words combined gets trimmed at write time to a summary
+  + a pointer into the relevant `memory/*.md` file, rather than left as
+  one giant paragraph.
 
 - **`handoffs/`** (optional, opt-in) — independent-execution dispatch
   system for repos with parallelizable, independent work streams. Not
@@ -104,7 +112,18 @@ Read this file first in any session.
   touched-surface conflicts, and `executor` subagents (worktree-isolated
   for parallel work) run each stream independently and report back in a
   structured shape. Delete `handoffs/` entirely if a project never needs
-  it — its presence isn't a signal the repo requires it.
+  it — its presence isn't a signal the repo requires it. Pairs with the
+  `## Parallel work` section below once a project has genuinely
+  concurrent streams, not just sequential handoffs.
+
+- **`integrations/`** (optional, opt-in) — self-contained add-on modules a
+  project can adopt piecemeal. Each lives in its own subdirectory with its
+  own `README.md` covering what it does, how to wire it in, and how to
+  remove it cleanly — not part of default BOOT setup. A project that
+  doesn't need a given integration just deletes its subdirectory; nothing
+  else references it. See `integrations/telegram-relay/README.md` for the
+  one shipped with this template (Telegram notifications + remote
+  permission-approval for Claude Code sessions).
 
 ## Rules
 
@@ -142,6 +161,14 @@ Read this file first in any session.
   *is* a deploy. Committing locally is fine; publishing is the gated step.
   When the user says to hold off pushing/deploying, that hold stands for
   the **rest of the session**, not just the one commit it was said about.
+- **Verify the verification.** Before reporting an all-clear ("tests pass",
+  "the fix works", "nothing's broken"), confirm the check you ran could
+  actually have detected the problem in question — a green result from a
+  check that never exercised the failing path is not evidence of anything.
+  This has bitten real projects: a "confirmed healthy" health check that
+  read the wrong signal, a passing test suite that never touched the
+  changed code path. State what was actually verified and how, not just
+  the outcome.
 
 ### If this project has a UI / front-end
 
@@ -177,3 +204,88 @@ Read this file first in any session.
 - Encode design/behaviour invariants ("fits without scrolling", "no
   overflow", "stays centred") as guardrail tests where you can, so they
   fail loudly instead of being caught by eye later.
+
+## Parallel work (worktrees + stream registry) — optional, pairs with `handoffs/`
+
+Only relevant once a project has genuinely parallel, independent work
+streams — multiple orchestrator sessions, or an orchestrator plus
+subagents, touching the repo at once. A single-threaded project doesn't
+need this; `handoffs/` alone covers sequential dispatch. Folded into this
+template from a downstream project's real scaling pain — a real incident
+where an unscoped `git add -A` in the shared checkout swept another
+session's in-progress work into an unrelated commit — the rules below
+exist specifically to stop that class of collision, not as speculative
+process:
+
+- **One worktree per stream — created by hand by the orchestrator, never
+  via the Agent tool's own `isolation` param.** The primary checkout (on
+  the default branch) is the **integration tree**; it only reviews and
+  merges. Every parallel stream works in its **own** worktree on its own
+  branch, created by the orchestrator BEFORE dispatch:
+  `git worktree add ../<repo>-<stream> -b stream/<name>`, then the
+  executor's dispatch prompt states that absolute sibling path as where to
+  work. A stream commits only to its own branch; the integrator merges it
+  to the default branch, so that branch moves through one reviewed door.
+  Never `git add -A` in the primary tree without checking whose changes
+  are actually staged.
+  **Do not pass `isolation: "worktree"` to the Agent tool without first
+  confirming it actually works in your environment** — confirmed to fail
+  100% of the time on at least one real Windows setup this rule was
+  written against. Use the sibling-worktree convention above unless you've
+  specifically verified the harness's own isolation works for you, and
+  record whichever way it goes (with the exact error text, if it fails) in
+  an `environment-truths.md`-style memory file so it isn't re-discovered
+  the expensive way twice.
+  **Commit before you dispatch.** A worktree branches from a *commit*, not
+  the orchestrator's working tree — a freshly written, uncommitted handoff
+  (or any doc it depends on) is invisible to the executor meant to run it.
+  This is structural, not bad luck: it recurs every time it's skipped.
+  Commit to the default branch first, *then* `git worktree add`. If a
+  stream's worktree already existed and the default branch has moved on,
+  rebase it before resuming.
+  **Cleanup gotcha (seen on Windows):** once a stream's branch is merged,
+  removing its worktree can fail with a permission error even though the
+  worktree is otherwise done — a lingering handle from a just-finished
+  subagent process, or antivirus scanning the directory right after its
+  last write, can hold a lock for a few seconds. It's transient: retry
+  once, or fall back to a plain directory removal (the directory is
+  already empty of tracked content at that point, distinct from a
+  recursive force-delete of something still in use). Then prune the
+  worktree from git's own registry.
+- **The orchestrator owns the live stream registry outright — executors
+  never touch it, even to "claim" or "release" their own row.** Call it
+  `ACTIVE.md` in the primary worktree, and **gitignore it** — it's
+  machine-local coordination state, not project history. Only the
+  orchestrator reads and writes it: add/update a stream's row (stream ·
+  worktree/branch · owner+date · touched surfaces · status) **before**
+  dispatching, and update/release it once the executor reports back.
+  Executors report status in their structured report only — a
+  worktree-isolated executor reaching *outside its own worktree* to
+  hand-edit a file that only exists in the primary tree defeats the
+  isolation the worktree exists to provide. This is what enforces a
+  serialized-chokepoint rule (name any shared, hard-to-merge surface
+  explicitly — "at most one active stream on this surface at a time")
+  *across* independent sessions, not just within one. If a surface you
+  need is already claimed, coordinate rather than double-touch it.
+  **Keep it small** — give it the same archive-cadence discipline as
+  `Working.md`; an always-injected coordination file that grows unbounded
+  is one of the more expensive doc-bloat mistakes a project's own tooling
+  can make.
+- **Executors do not reliably commit incrementally, and instructing them
+  does not fix it on its own.** Even with the commit-discipline rule in
+  `.claude/agents/executor.md`, real streams have lost hundreds of lines of
+  work because an executor was terminated mid-run — an API error, a
+  session limit, a timeout — before it got around to committing. What
+  actually closed the gap was not another instruction but a `Monitor` loop
+  armed at dispatch time that commits anything uncommitted on a short
+  interval (a few minutes): it no-ops when the agent behaves, and caps
+  worst-case loss at that interval regardless. Consider arming one at
+  every worktree dispatch rather than relying on the agent remembering to
+  commit — the rule already existing in `executor.md` and still not being
+  followed consistently is itself the evidence that a second, independent
+  safety net earns its keep here.
+
+See `.claude/agents/executor.md` for the executor contract these rules
+assume, and `.claude/agents/researcher.md` for the read-only counterpart
+used for investigation that feeds a decision or a handoff rather than
+building one.

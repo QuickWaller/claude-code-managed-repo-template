@@ -49,5 +49,6 @@ There are TWO opposing costs; size streams to sit between them:
 | Stream (handoff) | Status | Mode | Touches | Depends on | Notes |
 |---|---|---|---|---|---|
 | _example — delete once real streams exist_ | ⬜ blocked | subagent | — | — | — |
+| [windows-command-injection.md](windows-command-injection.md) | ⬜ scoped, not dispatched | interactive | `integrations/telegram-relay/` | none | Injecting a fresh instruction into an idle session from Telegram, Windows-native (no tmux/WSL). See file for prior-art credits. |
 
 <!-- Add new streams as rows; copy TEMPLATE.md for the handoff doc. -->

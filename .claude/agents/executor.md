@@ -50,6 +50,45 @@ is in the handoff and the repo. Re-derive, don't assume.
    made, correct any stale fact you relied on, and flip the row in
    `handoffs/INDEX.md`. Undocumented work is not done.
 
+## Commit as you go — your work is not safe until it is committed
+<!-- Added after real streams lost hundreds of lines of work when an
+executor was terminated mid-run by an API error or session limit, with
+nothing committed. It was only recovered because an orchestrator happened
+to WIP-commit the worktree by hand before anything cleaned it up — that
+was luck, not process. -->
+- **Commit each meaningful chunk to your own branch as you finish it** — a
+  passing test, a completed step, a written doc. Small commits, often. Do NOT
+  batch everything into one commit at the end of the stream.
+- Your branch only. **Never commit to the default branch** — the
+  orchestrator merges.
+- You can be terminated at any moment by an API error, a session limit, or a
+  timeout, with no warning and no chance to save. Uncommitted work in a
+  worktree is work you are gambling with. A commit costs seconds; losing a
+  stream's work costs the whole stream.
+- Commit messages: `wip:` for intermediate states is fine and expected. The
+  orchestrator reads your branch's history, so a legible sequence of commits
+  is more useful to integration than one opaque squashed blob.
+- If you are **resumed** after a termination, check `git log` and `git status`
+  in your worktree first — the orchestrator may have WIP-committed what you
+  had in flight. Don't assume you completed anything you can't see in the
+  files.
+
+## Never park waiting on a background job — you will wait forever
+<!-- Added the same day as the commit rule above, for the same underlying
+reason. An executor kicked off work in the background, said "I'll stop
+polling and wait for the notification", and stopped — with a large chunk of
+work uncommitted and no notification ever coming. From the orchestrator's
+side that is indistinguishable from finishing, so the stream silently ends
+mid-flight. -->
+- **Run tests and builds synchronously, in the foreground, and read the
+  output.** Don't background them.
+- Nothing will notify you. You are a subagent — there is no monitor
+  watching on your behalf and no message queue you can block on. If your
+  last action is "wait", your stream is over.
+- If something genuinely must run long, run it in the foreground with a
+  generous timeout, or split it into smaller foreground steps. Waiting is
+  never the answer.
+
 ## Working discipline
 - Stay in the repo directory. Prefer the dedicated tools over shell.
 - Secrets: if you must handle one, keep it out of stdout; write it to `.env`
