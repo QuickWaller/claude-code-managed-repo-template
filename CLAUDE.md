@@ -125,6 +125,58 @@ Read this file first in any session.
   one shipped with this template (Telegram notifications + remote
   permission-approval for Claude Code sessions).
 
+## Secrets
+
+Two different problems, two different mechanisms — don't reach for one
+where the other actually fits:
+
+- **A secret only this machine/session needs, never committed**: a
+  gitignored `.env` (see BOOT step 4). Simple, no extra tooling, fine for
+  the common case.
+- **A secret that needs to be shared across machines, needs to survive a
+  single machine's loss, or is worth committing for audit/history** (a
+  credential a *remote* environment also needs, anything you'd otherwise
+  be copy-pasting into a password manager and a local `.env` in parallel):
+  encrypt it at rest and commit the encrypted file rather than keeping it
+  local-only. [SOPS](https://github.com/getsops/sops) plus an age key is a
+  concrete, low-ceremony mechanism for this: `*.enc.yaml` files are safe
+  to commit, one `.sops.yaml` declares what gets encrypted — prefer
+  encrypt-by-default (an `unencrypted_regex` allow-list of what stays
+  plain) over the inverse, since an allow-list-of-what-to-encrypt silently
+  misses a new field the day someone forgets to add it — and the actual
+  age private key lives *outside* the repo entirely (password manager,
+  one machine's local keyring), never committed itself.
+- **Pair either mechanism with a registry, not just the raw files.** One
+  file recording *names, owners, rotation dates* — never values — so a
+  session (or a human) can read what credentials exist and when they last
+  rotated without ever touching a value. A credential's registry row
+  should say plainly where its real value lives (which `.enc.yaml`, which
+  password-manager entry) rather than duplicating it.
+- **A write-capable credential's "a human must be present" requirement
+  doesn't always need its own storage/passphrase ceremony.** If every
+  mutating command in the session already needs interactive approval
+  before it runs, that approval step *is* the gate — pair it with a
+  standing rule to always state plainly what a mutation will do before
+  running it, rather than building mint-per-task or passphrase-vault
+  machinery on top of a gate that already exists. Reach for real
+  credential separation only when the interactive-approval assumption
+  itself doesn't hold (a fully autonomous/unattended run, a credential
+  several people share).
+- **Treat any accidental exposure as a real compromise, not a near-miss.**
+  A secret printed to a transcript, logged, or echoed in a command's own
+  argv is exposed the moment it's visible, whether or not anyone actually
+  reads it back. Rotate the credential immediately — don't just
+  re-encrypt or hide the same value — and clean up whatever local
+  artifacts hold the plaintext. **A command's own arguments are not a
+  safe place to narrate from if a secret is among them**: printing "here's
+  the exact command about to run" for transparency is good practice right
+  up until that command's argv contains a credential. An encoding
+  (base64, JSON, a rendered template) is not encryption and does not make
+  this safe — it's trivially reversible by anyone who reads it. Narrate
+  *intent* instead ("about to join this host to the network using a fresh
+  key"), never the literal invocation, whenever a secret could be sitting
+  in it.
+
 ## Rules
 
 - Before proposing or researching an approach, check the decision
@@ -161,6 +213,24 @@ Read this file first in any session.
   *is* a deploy. Committing locally is fine; publishing is the gated step.
   When the user says to hold off pushing/deploying, that hold stands for
   the **rest of the session**, not just the one commit it was said about.
+- **When an instruction is ambiguous partway through a long, multi-thread
+  session, survey the full set of currently open items before asking a
+  clarifying question** — not just whatever was most recently discussed.
+  Recency bias makes the last topic feel like "the" open item and crowds
+  out others that are equally live; a clarifying question built around
+  only the most recent thread can miss the actual referent entirely,
+  costing a wasted round-trip. Likewise, when stating a fact about
+  something that exists at multiple layers (a host and its guests, a
+  service and its dependency), name the layer explicitly on first
+  mention — an unqualified claim about one layer reads as ignorance of
+  the other, even when it's narrowly correct.
+- **A file's own top-of-file status banner is the highest-visibility claim
+  in it — keep it in sync with reality as work lands**, don't let it go
+  stale while a detailed table or checklist further down the same file
+  stays accurately maintained. A reader (human or a future session) skims
+  the banner first and often only the banner; a banner claiming "nothing
+  built yet" beside a body that's mostly done is actively misleading,
+  worse than no banner at all.
 - **Verify the verification.** Before reporting an all-clear ("tests pass",
   "the fix works", "nothing's broken"), confirm the check you ran could
   actually have detected the problem in question — a green result from a
