@@ -218,11 +218,28 @@ where the other actually fits:
   another session's `git commit` will carry your staged edits under its
   message and its co-author, and unstaging only defends against a plain
   `git commit` — `-a` and `-A` sweep the working tree regardless of who
-  put changes there. If you need a change in another repo, leave it
-  unstaged and say so plainly, or ask a session working there to make it.
-  **If your `cwd` sits above several repos rather than inside one, you
-  have no own checkout — every repo is someone else's.** See `## Parallel
-  work` for the same collision inside a single repo.
+  put changes there. **If your `cwd` sits above several repos rather than
+  inside one, you have no own checkout — every repo is someone else's.**
+  See `## Parallel work` for the same collision inside a single repo.
+
+  The hazard is not "this isn't mine" — it is "a peer could commit here
+  and sweep me up." Those come apart, so decide by who is actually
+  there (`~/.claude/sessions/*.json` lists live sessions and their
+  `cwd`):
+  - **A live session owns that checkout** → leave your change unstaged
+    and tell it, in the same turn, listing the files. It commits them in
+    context.
+  - **No live session owns it** → commit them yourself, by explicit
+    pathspec, only what you touched, with a message saying which session
+    made the change and why. There is nothing to collide with.
+  - **Never leave a foreign-repo edit unstaged and unowned.** That is the
+    worst of the three: a change sitting in a tree nobody is watching is
+    a landmine for whoever next runs `git add -A` there. Staging is the
+    hazard; committing promptly is the mitigation.
+
+  If you cannot tell whether a session is live there, commit. Guessing
+  "nobody's home" costs a tidy extra commit; guessing "someone's home"
+  costs an orphaned edit that nobody owns and the next sweep collects.
 - **Before any commit, run `git status --short` and commit by explicit
   pathspec.** Never `git commit -a`, never a bare `git add -A`. If files
   you did not touch are staged, stop and say so rather than committing
