@@ -42,8 +42,19 @@ There are TWO opposing costs; size streams to sit between them:
   stream may be `running` at a time — name the chokepoint explicitly in
   both streams' rows. Everything else can run in parallel.
 - **Deps:** a stream may start only when every `Depends on` is `done`.
-- **Every completed stream** flips its own row here + updates `Working.md`/
-  `decisions/DECISIONS.md`.
+- **Every completed stream** flips its own row here. Under the
+  single-stream default, it also updates `Working.md`/
+  `decisions/DECISIONS.md` — under concurrent dispatch, the orchestrator
+  owns those instead (see doc ownership, below).
+- **Doc ownership under concurrency, deliberately different from
+  `executor.md`'s single-stream default:** once more than one stream is
+  `running` at once, the orchestrating session owns `Working.md`,
+  `decisions/DECISIONS.md`, and `memory/`. Executors do **not** write to
+  them — they report findings, and the orchestrator records. That keeps
+  the register in one voice and avoids several agents conflicting on one
+  long file. Executors *do* still update their own row here and their own
+  handoff doc. See `.claude/agents/executor.md` rule 3 for which mode
+  applies when.
 
 ## Streams
 | Stream (handoff) | Status | Mode | Touches | Depends on | Notes |

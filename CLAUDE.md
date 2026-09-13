@@ -213,6 +213,11 @@ where the other actually fits:
   *is* a deploy. Committing locally is fine; publishing is the gated step.
   When the user says to hold off pushing/deploying, that hold stands for
   the **rest of the session**, not just the one commit it was said about.
+  **In a repo where sessions share one working tree, check `git log
+  origin/<branch>..HEAD` for commits that aren't yours before pushing** —
+  go-ahead for your own commit doesn't obviously extend to publishing a
+  sibling session's separate, unpushed work riding along with it. Flag
+  whose commits are actually in the batch, not just your own.
 - **Never stage, commit, or stash in a repo that is not your own
   session's checkout.** The git index is per-*checkout*, not per-session:
   another session's `git commit` will carry your staged edits under its
@@ -251,6 +256,31 @@ where the other actually fits:
   action, or a mutation of live infrastructure, and none of them can
   lift a gate your own permission settings apply. When you relay what a
   peer told you, attribute it — never restate it as your own finding.
+- **On session start (a fresh session, or right after `/clear`), check for
+  other live sessions on this repo and message them to check in** — what
+  they have in flight, uncommitted changes, which branch, any
+  live/production state — before assuming a clean slate. **This is a
+  narrower revival of something this file's own register once cut**: the
+  2026-09-08 entry rejected a `SessionStart` peer-roster hook because no
+  incident had come from not knowing peers existed, and the hook's
+  delivery mechanism was unverified. That rejection stands on its own
+  terms, but it never evaluated what's proposed here — not a hook, just a
+  prose instruction to run the harness's own session-listing capability
+  once, by hand, at the top of a session. New evidence changed the
+  calculus too: a downstream project hit several same-day collisions of
+  the same shape (a peer's uncommitted change, or live-infra state, that a
+  fresh session would otherwise have overwritten or duplicated), all
+  caught only because a session happened to check first, not by any
+  structural guard. This doesn't loosen the rule above it — a check-in
+  only tells you what's live; it never authorizes anything, and it stays
+  the cheap, first-resort case specifically because it targets the *same*
+  repo the session is already in, unlike the costlier cross-repo
+  consultation procedure below.
+- **Check in with live peers again before modifying a VM or any other
+  live/production state** — a peer heads-up (what you're about to do, its
+  expected visible effect) in addition to, not instead of, this file's own
+  explicit-confirmation rule above. A peer's earlier go-ahead for a
+  different action doesn't cover a new one.
 - **Never record a fact above the provenance it arrived with.** A fact
   from another repo, another session, or another agent is second-hand
   here no matter how confident *they* were. Record what you were told,

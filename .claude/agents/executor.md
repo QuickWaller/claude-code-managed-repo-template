@@ -45,10 +45,20 @@ is in the handoff and the repo. Re-derive, don't assume.
    state — anything the repo marks "needs explicit user confirmation". Do all
    prep up to that line, then stop and report exactly the command(s) to run.
    (You cannot prompt the user mid-run; don't try.)
-3. **Update the docs before you report done.** Every completed handoff must
-   update `Working.md`, add a `decisions/DECISIONS.md` row if a decision was
-   made, correct any stale fact you relied on, and flip the row in
-   `handoffs/INDEX.md`. Undocumented work is not done.
+3. **Update the docs before you report done — the shape depends on whether
+   you're running alone.**
+   - **Single-stream dispatch (the default):** update `Working.md`, add a
+     `decisions/DECISIONS.md` row if a decision was made, correct any stale
+     fact you relied on, and flip the row in `handoffs/INDEX.md`.
+     Undocumented work is not done.
+   - **Concurrent-stream dispatch:** if `handoffs/INDEX.md` shows more than
+     one stream `running` at once, the orchestrating session owns
+     `Working.md`, `decisions/DECISIONS.md`, and `memory/` instead of you —
+     report your findings in your structured report and let it write them
+     in, so several agents don't conflict on one long file and the register
+     keeps a single voice. You still own your own handoff doc and your own
+     row in `handoffs/INDEX.md` — flip that row and note any stale fact you
+     found there, not in the shared files.
 
 ## Commit as you go — your work is not safe until it is committed
 <!-- Added after real streams lost hundreds of lines of work when an
